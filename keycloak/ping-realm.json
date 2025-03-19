@@ -54,7 +54,8 @@
       "webOrigins": ["http://localhost:3000"],
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": ["openid", "profile", "roles"]
     },
     {
       "clientId": "ping-backend",

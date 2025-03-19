@@ -12,14 +12,16 @@ const keycloak = new Keycloak({
 
 function App() {
   const onKeycloakEvent = (event, error) => {
-    console.log("Keycloak event:", event, error); // Debug events
+    console.log("Keycloak event:", event, error);
     if (event === "onReady" && !keycloak.authenticated) {
-      keycloak.login(); // Force login if not authenticated
+      keycloak.login({ redirectUri: "http://localhost:3000" });
+    } else if (event === "onAuthSuccess") {
+      console.log("Authentication successful");
     }
   };
 
   const onKeycloakTokens = (tokens) => {
-    console.log("Keycloak tokens:", tokens); // Debug tokens
+    console.log("Keycloak tokens:", tokens);
     api.interceptors.request.use((config) => {
       if (tokens.token) {
         config.headers.Authorization = `Bearer ${tokens.token}`;
@@ -34,7 +36,7 @@ function App() {
       onEvent={onKeycloakEvent}
       onTokens={onKeycloakTokens}
       initOptions={{
-        onLoad: "login-required", // Force login instead of check-sso
+        onLoad: "login-required",
         checkLoginIframe: false,
       }}
     >

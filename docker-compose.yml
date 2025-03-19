@@ -7,8 +7,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - db
-      - keycloak
+      db:
+        condition: service_healthy  # Wait for db to be healthy
+      keycloak:
+        condition: service_started  # Wait for Keycloak to start
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/ping_db
       - SPRING_DATASOURCE_USERNAME=ping_user
@@ -32,11 +34,17 @@ services:
     environment:
       POSTGRES_USER: ping_user
       POSTGRES_PASSWORD: ping_password
-      POSTGRES_DB: ping_db
+      POSTGRES_DB: postgres  # Default DB for initialization
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d  # Mount init script
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ping_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
@@ -52,9 +60,11 @@ services:
     ports:
       - "8180:8180"
     depends_on:
-      - db
+      db:
+        condition: service_healthy  # Wait for db to be healthy
     volumes:
       - ./keycloak/ping-realm.json:/opt/keycloak/data/import/ping-realm.json
     command: ["start-dev", "--import-realm"]
+
 volumes:
   pgdata:
