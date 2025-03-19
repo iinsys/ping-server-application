@@ -6,9 +6,13 @@ This project is a full-stack application that allows users to authenticate via K
 ```bash
 docker-compose up -d --build
 ```
+You see this below , use the test user creds
+![keycloak](./docs/keycloak.png)
 Test User:
 ```bash
 Username: testuser
 Password: password
 ```
+and after login you will see 
+![Dashboard](./docs/results.png)
 [LICENSE](./LICENSE)
