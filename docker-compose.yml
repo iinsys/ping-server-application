@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - keycloak
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/ping_db
+      - SPRING_DATASOURCE_USERNAME=ping_user
+      - SPRING_DATASOURCE_PASSWORD=ping_password
+    command: ["sh", "-c", "sleep 10 && java -jar app.jar"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend:8080
+      - REACT_APP_KEYCLOAK_URL=http://keycloak:8180
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ping_user
+      POSTGRES_PASSWORD: ping_password
+      POSTGRES_DB: ping_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://db:5432/keycloak_db
+      - KC_DB_USERNAME=ping_user
+      - KC_DB_PASSWORD=ping_password
+      - KC_HOSTNAME=localhost
+      - KC_HTTP_PORT=8180
+    ports:
+      - "8180:8180"
+    depends_on:
+      - db
+    volumes:
+      - ./keycloak/ping-realm.json:/opt/keycloak/data/import/ping-realm.json
+    command: ["start-dev", "--import-realm"]
+volumes:
+  pgdata:
