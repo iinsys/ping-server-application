@@ -26,8 +26,8 @@ services:
     depends_on:
       - backend
     environment:
-      - REACT_APP_BACKEND_URL=http://backend:8080
-      - REACT_APP_KEYCLOAK_URL=http://keycloak:8180
+      - REACT_APP_BACKEND_URL=http://localhost:8080
+      - REACT_APP_KEYCLOAK_URL=http://localhost:8180
 
   db:
     image: postgres:latest
@@ -57,6 +57,8 @@ services:
       - KC_DB_PASSWORD=ping_password
       - KC_HOSTNAME=localhost
       - KC_HTTP_PORT=8180
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_HTTPS=false
     ports:
       - "8180:8180"
     depends_on:

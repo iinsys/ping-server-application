@@ -14,5 +14,5 @@ Username: testuser
 Password: password
 ```
 and after login you will see 
-![Dashboard](./docs/results.png)
+![Dashboard](./docs/results2.png)
 [LICENSE](./LICENSE)
