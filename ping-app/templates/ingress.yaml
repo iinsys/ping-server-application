@@ -1,0 +1,29 @@
+# templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "ping-app.name" . }}-ingress
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: {{ .Values.ingress.paths.frontend.path }}
+        pathType: {{ .Values.ingress.paths.frontend.pathType }}
+        backend:
+          service:
+            name: frontend
+            port:
+              number: {{ .Values.frontend.port }}
+      - path: {{ .Values.ingress.paths.keycloak.path }}
+        pathType: {{ .Values.ingress.paths.keycloak.pathType }}
+        backend:
+          service:
+            name: keycloak
+            port:
+              number: {{ .Values.keycloak.port }}

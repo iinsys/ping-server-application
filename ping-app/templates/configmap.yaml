@@ -1,0 +1,13 @@
+# templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ping-app.name" . }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+data:
+  init-databases.sh: |
+    {{- .Files.Get "config/init-databases.sh" | nindent 4 }}
+  ping-realm.json: |
+    {{- .Files.Get "config/ping-realm.json" | nindent 4 }}

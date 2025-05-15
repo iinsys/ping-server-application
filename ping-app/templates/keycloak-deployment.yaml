@@ -1,0 +1,98 @@
+# templates/keycloak-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ping-app.name" . }}-keycloak
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+    app: keycloak
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ping-app.labels" . | nindent 6 }}
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        {{- include "ping-app.labels" . | nindent 8 }}
+        app: keycloak
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command: ["sh", "-c", "until nc -z db {{ .Values.db.port }}; do echo waiting for db; sleep 2; done;"]
+      containers:
+      - name: keycloak
+        image: {{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
+        imagePullPolicy: {{ .Values.keycloak.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.keycloak.port }}
+        env:
+        - name: KEYCLOAK_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: keycloak-admin-username
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: keycloak-admin-password
+        - name: KC_DB
+          value: postgres
+        - name: KC_DB_URL
+          value: {{ .Values.keycloak.env.dbUrl }}
+        - name: KC_DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: db-username
+        - name: KC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: db-password
+        - name: KC_HOSTNAME
+          value: {{ .Values.ingress.host }}
+        - name: KC_HTTP_PORT
+          value: "{{ .Values.keycloak.port }}"
+        - name: KC_HOSTNAME_STRICT
+          value: "false"
+        - name: KC_HOSTNAME_STRICT_HTTPS
+          value: "false"
+        volumeMounts:
+        - name: keycloak-realm
+          mountPath: /opt/keycloak/data/import
+        command: ["start-dev", "--import-realm"]
+        resources:
+          {{- toYaml .Values.keycloak.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /auth
+            port: {{ .Values.keycloak.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: keycloak-realm
+        configMap:
+          name: {{ include "ping-app.name" . }}-config
+          items:
+          - key: ping-realm.json
+            path: ping-realm.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+spec:
+  ports:
+  - port: {{ .Values.keycloak.port }}
+    targetPort: {{ .Values.keycloak.port }}
+  selector:
+    {{- include "ping-app.labels" . | nindent 4 }}
+    app: keycloak

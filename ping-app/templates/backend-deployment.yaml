@@ -1,0 +1,71 @@
+# templates/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ping-app.name" . }}-backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+    app: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ping-app.labels" . | nindent 6 }}
+      app: backend
+  template:
+    metadata:
+      labels:
+        {{- include "ping-app.labels" . | nindent 8 }}
+        app: backend
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox
+        command: ["sh", "-c", "until nc -z db {{ .Values.db.port }}; do echo waiting for db; sleep 2; done;"]
+      - name: wait-for-keycloak
+        image: busybox
+        command: ["sh", "-c", "until nc -z keycloak {{ .Values.keycloak.port }}; do echo waiting for keycloak; sleep 2; done;"]
+      containers:
+      - name: backend
+        image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.backend.port }}
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: {{ .Values.backend.env.springDatasourceUrl }}
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: db-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: db-password
+        command: ["sh", "-c", "sleep 10 && java -jar app.jar"]
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: {{ .Values.backend.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+spec:
+  ports:
+  - port: {{ .Values.backend.port }}
+    targetPort: {{ .Values.backend.port }}
+  selector:
+    {{- include "ping-app.labels" . | nindent 4 }}
+    app: backend

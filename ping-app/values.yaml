@@ -1,0 +1,89 @@
+# values.yaml
+namespace: ping-app
+
+replicaCount: 1
+
+backend:
+  image:
+    repository: ping-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8080
+  env:
+    springDatasourceUrl: "jdbc:postgresql://db:5432/ping_db"
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+
+frontend:
+  image:
+    repository: ping-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 80
+  env:
+    backendUrl: "http://backend:8080"
+    keycloakUrl: "http://keycloak:8180"
+  resources:
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+db:
+  image:
+    repository: postgres
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 5432
+  storage:
+    size: "1Gi"
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+
+keycloak:
+  image:
+    repository: quay.io/keycloak/keycloak
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8180
+  env:
+    dbUrl: "jdbc:postgresql://db:5432/keycloak_db"
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+
+ingress:
+  enabled: true
+  host: "ping-app.local"
+  paths:
+    frontend:
+      path: "/"
+      pathType: Prefix
+    keycloak:
+      path: "/auth"
+      pathType: Prefix
+
+secrets:
+  db:
+    username: "ping_user"
+    password: "ping_password"
+  keycloak:
+    adminUsername: "admin"
+    adminPassword: "admin"
+    clientSecret: "j3mfEWWtU6EA3T5fVfu3jkN2E3RuVPbYIN1/JrZK3eU="

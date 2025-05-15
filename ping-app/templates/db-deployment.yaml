@@ -1,0 +1,93 @@
+# templates/db-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ping-app.name" . }}-db
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+    app: db
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ping-app.labels" . | nindent 6 }}
+      app: db
+  template:
+    metadata:
+      labels:
+        {{- include "ping-app.labels" . | nindent 8 }}
+        app: db
+    spec:
+      containers:
+      - name: db
+        image: {{ .Values.db.image.repository }}:{{ .Values.db.image.tag }}
+        imagePullPolicy: {{ .Values.db.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.db.port }}
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: db-username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ping-app.name" . }}-secrets
+              key: db-password
+        - name: POSTGRES_DB
+          value: postgres
+        volumeMounts:
+        - name: db-init
+          mountPath: /docker-entrypoint-initdb.d
+        - name: db-data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          {{- toYaml .Values.db.resources | nindent 10 }}
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "{{ .Values.secrets.db.username }}"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+      volumes:
+      - name: db-init
+        configMap:
+          name: {{ include "ping-app.name" . }}-config
+          items:
+          - key: init-databases.sh
+            path: init-databases.sh
+      - name: db-data
+        persistentVolumeClaim:
+          claimName: {{ include "ping-app.name" . }}-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+spec:
+  ports:
+  - port: {{ .Values.db.port }}
+    targetPort: {{ .Values.db.port }}
+  selector:
+    {{- include "ping-app.labels" . | nindent 4 }}
+    app: db
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ping-app.name" . }}-db-pvc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ping-app.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.db.storage.size }}
+
