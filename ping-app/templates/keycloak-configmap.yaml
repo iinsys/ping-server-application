@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  labels:
+    app: keycloak
+  namespace: default
+data:
+  ping-realm-realm.json: |
+    {{ .Values.keycloakRealm.content | nindent 4 }} 

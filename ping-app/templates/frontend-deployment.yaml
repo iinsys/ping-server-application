@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.frontend.image }}
+          ports:
+            - containerPort: {{ .Values.frontend.port }}
+          env:
+            - name: REACT_APP_BACKEND_URL
+              value: "{{ .Values.frontend.env.REACT_APP_BACKEND_URL }}"
+            - name: REACT_APP_KEYCLOAK_URL
+              value: "{{ .Values.frontend.env.REACT_APP_KEYCLOAK_URL }}"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.frontend.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10 

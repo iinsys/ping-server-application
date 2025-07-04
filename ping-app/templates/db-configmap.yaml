@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init-script
+  labels:
+    app: db
+  namespace: default
+data:
+  init-databases.sh: |
+    {{ .Values.initdb.script | nindent 4 }} 

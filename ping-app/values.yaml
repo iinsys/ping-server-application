@@ -1,0 +1,135 @@
+backend:
+  image: bansikah/ping-service:latest
+  port: "8080"
+  env:
+    SPRING_DATASOURCE_URL: "jdbc:postgresql://db:5432/ping_db"
+    SPRING_DATASOURCE_USERNAME: "ping_user"
+    SPRING_DATASOURCE_PASSWORD: "ping_password"
+
+frontend:
+  image: bansikah/ping-web:latest
+  port: "80"
+  env:
+    REACT_APP_BACKEND_URL: "http://backend:8080"
+    REACT_APP_KEYCLOAK_URL: "http://keycloak:8180"
+
+db:
+  image: postgres:latest
+  port: "5432"
+  storage: "1Gi"
+  env:
+    POSTGRES_USER: "ping_user"
+    POSTGRES_PASSWORD: "ping_password"
+    POSTGRES_DB: "postgres"
+
+keycloak:
+  image: quay.io/keycloak/keycloak:latest
+  port: "8180"
+  env:
+    KEYCLOAK_ADMIN: "admin"
+    KEYCLOAK_ADMIN_PASSWORD: "admin"
+    KC_DB: "postgres"
+    KC_DB_URL: "jdbc:postgresql://db:5432/keycloak_db"
+    KC_DB_USERNAME: "ping_user"
+    KC_DB_PASSWORD: "ping_password"
+    KC_HOSTNAME: "ping-app.local"
+    KC_HTTP_PORT: "8180"
+    KC_HOSTNAME_STRICT: "false"
+    KC_HOSTNAME_STRICT_HTTPS: "false"
+
+initdb:
+  script: |-
+    #!/bin/bash
+    set -e
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+      CREATE DATABASE ping_db;
+      CREATE DATABASE keycloak_db;
+      GRANT ALL PRIVILEGES ON DATABASE ping_db TO $POSTGRES_USER;
+      GRANT ALL PRIVILEGES ON DATABASE keycloak_db TO $POSTGRES_USER;
+    EOSQL
+
+keycloakRealm:
+  file: ping-realm-realm.json
+  content: |-
+    {
+      "realm": "ping-realm",
+      "enabled": true,
+      "sslRequired": "external",
+      "registrationAllowed": false,
+      "loginTheme": "keycloak",
+      "users": [
+        {
+          "username": "testuser",
+          "enabled": true,
+          "emailVerified": true,
+          "credentials": [
+            {
+              "type": "password",
+              "value": "password",
+              "temporary": false
+            }
+          ],
+          "realmRoles": ["user"]
+        },
+        {
+          "username": "adminuser",
+          "enabled": true,
+          "emailVerified": true,
+          "credentials": [
+            {
+              "type": "password",
+              "value": "adminpassword",
+              "temporary": false
+            }
+          ],
+          "realmRoles": ["admin"]
+        }
+      ],
+      "roles": {
+        "realm": [
+          {
+            "name": "user",
+            "description": "Regular user role"
+          },
+          {
+            "name": "admin",
+            "description": "Administrator role"
+          }
+        ]
+      },
+      "clients": [
+        {
+          "clientId": "ping-frontend",
+          "enabled": true,
+          "publicClient": true,
+          "protocol": "openid-connect",
+          "redirectUris": ["http://localhost:3000/*"],
+          "webOrigins": ["http://localhost:3000"],
+          "standardFlowEnabled": true,
+          "implicitFlowEnabled": false,
+          "directAccessGrantsEnabled": false,
+          "defaultClientScopes": ["openid", "profile", "roles"]
+        },
+        {
+          "clientId": "ping-backend",
+          "enabled": true,
+          "publicClient": false,
+          "secret": "j3mfEWWtU6EA3T5fVfu3jkN2E3RuVPbYIN1/JrZK3eU=",
+          "protocol": "openid-connect",
+          "redirectUris": ["http://localhost:8080/*"],
+          "webOrigins": ["http://localhost:8080"],
+          "standardFlowEnabled": true,
+          "implicitFlowEnabled": false,
+          "directAccessGrantsEnabled": true
+        }
+      ],
+      "accessTokenLifespan": 3600,
+      "ssoSessionIdleTimeout": 1800,
+      "ssoSessionMaxLifespan": 36000
+    }
+
+ingress:
+  enabled: true
+  host: "ping-app.local"
+  frontendPath: "/"
+  keycloakPath: "/auth" 
