@@ -1,5 +1,8 @@
 # Ping Server Application
 
+[![Full-Stack CI](https://github.com/iinsys/ping-server-application/actions/workflows/ci.yml/badge.svg)](https://github.com/iinsys/ping-server-application/actions/workflows/ci.yml)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen?logo=dependabot)](https://github.com/iinsys/ping-server-application/network/updates)
+
 This project is a full-stack application that allows users to authenticate via Keycloak and manage servers through a REST API, with a React frontend, Spring Boot backend, and PostgreSQL database, all orchestrated using Docker Compose.
 
 This project is purposely built to help newbies getting started with spring boot and keycloak, did this for my article
