@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # -----------------------
+  # 1. Java Backend (Maven)
+  # -----------------------
+  - package-ecosystem: "maven"
+    directory: "/backend" 
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # -----------------------
+  # 2. React Frontend (npm)
+  # -----------------------
+  - package-ecosystem: "npm"
+    directory: "/frontend" 
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # -----------------------
+  # 3. GitHub Actions
+  # -----------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # -----------------------
+  # 4. Dockerfile
+  # -----------------------
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
