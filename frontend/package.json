@@ -7,7 +7,7 @@
     "axios": "^1.16.1",
     "keycloak-js": "^26.2.4",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19.2.6",
     "react-scripts": "5.0.1"
   },
   "devDependencies": {
